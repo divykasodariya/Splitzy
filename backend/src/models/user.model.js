@@ -23,6 +23,10 @@ const userSchema = new mongoose.Schema(
             type: mongoose.Schema.Types.ObjectId,
             ref: "Transaction"
         }],
+         groups: [{
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Group"
+        }],
         avatar: {
             type: String,
 

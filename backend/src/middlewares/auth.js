@@ -1,5 +1,5 @@
 import jwt from "jsonwebtoken";
-import { User } from "../models/user.model";
+import { User } from "../models/user.model.js";
 
 const isAuth= async (req,res,next)=>{
 try {
@@ -9,6 +9,7 @@ try {
     const decoded=jwt.verify(token,process.env.JWT_SECRET_KEY);
     const user =await User.findOne({email:decoded.email});
     req._id=user._id;
+
     next();
      
 }
@@ -20,7 +21,6 @@ else{
     })
 }
 } catch (error) {
- console.error.error;
  throw new ApiError(500,"failed authorisation process",[error]);   
 }
     
