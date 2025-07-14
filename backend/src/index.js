@@ -6,6 +6,7 @@ dotenv.config({})
 import connectDB from "./db/database.js";
 import { UserRouter } from "./routes/userRoutes.js"
 import { GroupRouter } from "./routes/groupRoutes.js"
+import { TransRouter } from "./routes/transactionRoutes.js"
 
 const app = express();
 
@@ -23,6 +24,7 @@ app.use(express.static("public"));
 //routes
 app.use('/api/v1/users',UserRouter);
 app.use('/api/v1/groups',GroupRouter)
+app.use('/api/v1/trsn',TransRouter)
 //server
 const port = process.env.PORT;
 app.listen(port||6969,()=>{

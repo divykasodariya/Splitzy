@@ -1,63 +1,62 @@
 import mongoose from "mongoose";
 
-const transactionSchema=new mongoose.Schema(
+const transactionSchema = new mongoose.Schema(
     {
-        nature:{
-            type:String,
-            required:true,
+
+        group: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Group",
+            required: true,
 
         },
-        group:{
-            type:mongoose.Schema.Types.ObjectId,
-            ref:"Group",
-            required:true,
+        description: {
+            type: String,
+            required: true,
 
         },
-        description:{
-            type:String,
-            required:true,
+        amount: {
+            type: Number,
+            required: true,
+            min: 0,
 
         },
-        amount:{
-            type:Number,
-            required:true,
 
+        payer: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "User",
+            required: true,
         },
-        receiver:{
-
-            type:mongoose.Schema.Types.ObjectId,
-            ref:"User",
-            required:true,
-
-        },
-        payer:{
-            type:mongoose.Schema.Types.ObjectId,
-            ref:"User",
-            required:true,
-        },
-        splitBw:[
+        splitDetails: [
             {
-                type:mongoose.Schema.Types.ObjectId,
-                ref:"User",
-                required:true
-            }
+                user: {
+                    type: mongoose.Schema.Types.ObjectId,
+                    ref: "User",
+                    required: true,
+                },
+                share: {
+                    type: Number,
+                    required: true,
+                    min: [0, "Share must be non-negative"],
+                },
+                isPaid: {
+                    type: Boolean,
+                    default: false,
+                },
+            },
         ],
-
-        isPayed:{
-            type:Boolean,
-            required:true,
+        currency: {
+            type: String,
+            required: true,
+            default: "INR",
+            uppercase: true,
         },
-        currency:{
-            type:String,
-            required:true,
-        },
-        avatar:{
-            type:String,
+        avatar: {
+            type: String,
 
         }
 
 
-        
-    },{timestamps:true}
+
+    }, { timestamps: true }
 )
- export const Transaction = mongoose.model("Transaction",transactionSchema)
+export const Transaction = mongoose.model("Transaction", transactionSchema)

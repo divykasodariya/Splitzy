@@ -2,7 +2,12 @@ import { User } from "../models/user.model.js"
 import { ApiError } from "../utils/ApiError.js";
 import { Group } from "../models/group.model.js"
 const getAllGroups = async (req, res) => {
-    const user = await User.findOne({ "_id": req._id })
+    const user = await User.findOne({ "_id": req._id }).populate({
+        path: "groups",
+        populate: [
+            { path: "users", select: "username email _id avatar" }
+        ]
+    })
     if (!user) return res.status(400).json({ message: "user not found" })
     res.status(200).json(user.groups);
 }
@@ -128,7 +133,7 @@ const removeUser = async (req, res) => {
         })
         await user.save()
         await group.save()
-        res.status(200).json({success:true,message:"successfully removed from group "})
+        res.status(200).json({ success: true, message: "successfully removed from group " })
 
     } catch (error) {
         if (error instanceof (ApiError)) {
@@ -137,24 +142,114 @@ const removeUser = async (req, res) => {
         throw new ApiError(500, "unexpected error occured in removing user ", [])
     }
 }
-const getAllUsers=async(req,res)=>{
+const getAllUsers = async (req, res) => {
     try {
-        const {groupid}=req.body;
-        const userid=req._id;
-        const group = await Group.findOne({_id:groupid})
+        const { groupid } = req.body;
+        const userid = req._id;
+        const group = await Group.findOne({ _id: groupid }).populate({
+            path: "users",
+            select: "username email _id avatar"
+        })
         // console.log("this is group.users",group.users);
-        const users= group.users.filter((u)=>{
+        const users = group.users.filter((u) => {
             // console.log("user : ",u._id)
-            return u._id.toString()!==userid.toString()
+            return u._id.toString() !== userid.toString()
         })
         res.status(200).json(users)
 
 
     } catch (error) {
-        if(error instanceof(ApiError)){
+        if (error instanceof (ApiError)) {
             throw error
         }
-        throw new ApiError(500,"unexpected error occured in getting all users of the group")
+        throw new ApiError(500, "unexpected error occured in getting all users of the group")
     }
 }
-export { getAllGroups, joinGroup, createGroup, addUser, deleteGroup, removeUser,getAllUsers };
+const balanceSheetGrp = async (req, res) => {
+    //get ("/api/v1/group/balance/:id")
+    try {
+        const grp = await Group.findOne({ _id: req.params.id })
+            .populate({ path: "users", select: "username _id email avatar" })
+            .populate(
+                {
+                    path: "transactions", populate:
+                        [
+                            { path: "payer", select: "username email _id avatar " },
+                            { path: "splitDetails.users", select: "username email _id avatar" }
+                        ]
+                }
+            )
+             if (!grp) throw new ApiError(404, "Group not found");
+        const transactions = grp.transactions
+        const balanceSheet = {} // Key: userId, Value: net balance
+        // const groupId = req.params.id
+        // const userId = req._id;
+        // for (tx of trnsactions) {
+        //     const payer = tx.payer._id.toString();
+        //     for (details of tx.splitDetails) {
+        //         const share = detail.share;
+        //         if (payer == userId.toString()) {
+        //             // balanceShee[]
+        //             balancesheet[payer] = (balancesheet[payer] || 0) + share;
+        //         }
+        //         else {
+        //             balancesheet[payer] = (balancesheet[payer] || 0) - share;
+        //         }
+        //     }
+        // }
+          for (const tx of transactions) {
+      const payerId = tx.payer._id.toString();
+
+      for (const detail of tx.splitDetails) {
+        const userIdStr = detail.user._id.toString();
+        const share = detail.share;
+
+        // Skip if user is same as payer
+        if (userIdStr === payerId) continue;
+
+        // Payer receives money
+        balanceSheet[payerId] = (balanceSheet[payerId] || 0) + share;
+
+        // Split user owes money
+        balanceSheet[userIdStr] = (balanceSheet[userIdStr] || 0) - share;
+      }
+    }
+
+    // Create readable summary
+    const summary = grp.users.map((user) => {
+      const uid = user._id.toString();
+      return {
+        user: {
+          _id: user._id,
+          username: user.username,
+          email: user.email,
+          avatar: user.avatar
+        },
+        netBalance: (balanceSheet[uid] || 0).toFixed(2),
+        status:
+          balanceSheet[uid] > 0
+            ? "They are owed"
+            : balanceSheet[uid] < 0
+            ? "They owe"
+            : "Settled"
+      };
+    });
+
+    res.status(200).json({
+      success: true,
+      group: {
+        _id: grp._id,
+        name: grp.name
+      },
+      balances: summary
+    });
+
+
+    } catch (error) {
+        if (error instanceof (ApiError)) {
+            throw error
+        }
+        throw new ApiError(500, "unexpected error occured in generating balance sheet of the group")
+    }
+}
+export { getAllGroups, joinGroup, createGroup, addUser, deleteGroup, removeUser, getAllUsers ,balanceSheetGrp};

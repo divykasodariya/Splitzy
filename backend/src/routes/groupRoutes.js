@@ -1,5 +1,5 @@
 import { Router } from "express"
-import { addUser, createGroup, deleteGroup, getAllGroups, getAllUsers, joinGroup, removeUser } from "../controllers/GroupController.js";
+import { addUser, balanceSheetGrp, createGroup, deleteGroup, getAllGroups, getAllUsers, joinGroup, removeUser } from "../controllers/GroupController.js";
 import { isAuth } from "../middlewares/auth.js";
 
 const GroupRouter = Router();
@@ -10,5 +10,5 @@ GroupRouter.route('/join').post(isAuth,joinGroup)
 GroupRouter.route('/delete/:id').delete(isAuth,deleteGroup);
 GroupRouter.route('/remove').delete(isAuth,removeUser)
 GroupRouter.route('/allusers').get(isAuth,getAllUsers);
-
+GroupRouter.route('/balance/:id').get(isAuth,balanceSheetGrp)
 export {GroupRouter};
