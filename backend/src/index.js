@@ -11,11 +11,17 @@ import { TransRouter } from "./routes/transactionRoutes.js"
 const app = express();
 
 //middlewares
-app.use(cors({
-    credentials:true,
-    origin:process.env.CORS_ORIGINS
-}))
 app.use(cookieParser());
+app.use(cors({
+    origin:['http://localhost:3000',
+    'http://localhost:5173',
+    'http://192.168.29.173:5173',
+    ],
+    credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}))
+
 app.use(express.json({limit:"16kb",
 }))
 app.use(express.urlencoded({extended:true}))
@@ -27,7 +33,7 @@ app.use('/api/v1/groups',GroupRouter)
 app.use('/api/v1/trsn',TransRouter)
 //server
 const port = process.env.PORT;
-app.listen(port||6969,()=>{
+app.listen(port||6969,'0.0.0.0',()=>{
     console.log(`server started at port ${port}`)
     connectDB().catch((err)=>{
         console.log("mongo db connection error !!",err);

@@ -40,11 +40,13 @@ const createGroup = async (req, res) => {
     try {
         const user = await User.findOne({ _id: _id })
         if (!user) throw new ApiError(400, "invalid user")
+        let av = `https://avatar.iran.liara.run/username?username=${name}`
+        av = av.replaceAll(' ', '');
         const group = await Group.create({
             name: name,
             users: [user],
             transactions: [],
-            groupAvatar: `https://avatar.iran.liara.run/username?username=${name}`
+            groupAvatar: av
 
         })
 
@@ -142,27 +144,55 @@ const removeUser = async (req, res) => {
         throw new ApiError(500, "unexpected error occured in removing user ", [])
     }
 }
-const getAllUsers = async (req, res) => {
+// const getAllUsers = async (req, res) => {
+//     try {
+//         const { groupid } = req.body;
+//         const userid = req._id;
+//         const group = await Group.findOne({ _id: groupid }).populate({
+//             path: "users",
+//             select: "username email _id avatar"
+//         }).populate({
+//             path: "transactions",
+//             select: "amount payer description"
+//         })
+//         // console.log("this is group.users",group.users);
+//         const users = group.users.filter((u) => {
+//             // console.log("user : ",u._id)
+//             return u._id.toString() !== userid.toString()
+//         })
+//         res.status(200).json({
+//             success:true,
+//             data:users
+//         })
+
+
+//     } catch (error) {
+//         if (error instanceof (ApiError)) {
+//             throw error
+//         }
+//         throw new ApiError(500, "unexpected error occured in getting all users of the group")
+//     }
+// }
+const getGroupInfo = async (req, res) => {
+    const groupid = req.params.id;
     try {
-        const { groupid } = req.body;
-        const userid = req._id;
         const group = await Group.findOne({ _id: groupid }).populate({
-            path: "users",
-            select: "username email _id avatar"
-        })
-        // console.log("this is group.users",group.users);
-        const users = group.users.filter((u) => {
-            // console.log("user : ",u._id)
-            return u._id.toString() !== userid.toString()
-        })
-        res.status(200).json(users)
+            path: "users", select: "username _id avatar"
+        }).populate({
+            path: "transactions", populate: [
 
+                { path: "payer", select: "username , _id ,avatar" },
+                { path: "splitDetails.user", select: "username _id share" }
+            ]
+        })
 
+        res.status(200).json({
+            success:true,
+            data:group
+        });
     } catch (error) {
-        if (error instanceof (ApiError)) {
-            throw error
-        }
-        throw new ApiError(500, "unexpected error occured in getting all users of the group")
+        if (error instanceof (ApiError)) throw error;
+        throw new ApiError(500, "unexpected error occured in getting group info ", [error])
     }
 }
 const balanceSheetGrp = async (req, res) => {
@@ -179,7 +209,7 @@ const balanceSheetGrp = async (req, res) => {
                         ]
                 }
             )
-             if (!grp) throw new ApiError(404, "Group not found");
+        if (!grp) throw new ApiError(404, "Group not found");
         const transactions = grp.transactions
         const balanceSheet = {} // Key: userId, Value: net balance
         // const groupId = req.params.id
@@ -197,52 +227,52 @@ const balanceSheetGrp = async (req, res) => {
         //         }
         //     }
         // }
-          for (const tx of transactions) {
-      const payerId = tx.payer._id.toString();
+        for (const tx of transactions) {
+            const payerId = tx.payer._id.toString();
 
-      for (const detail of tx.splitDetails) {
-        const userIdStr = detail.user._id.toString();
-        const share = detail.share;
+            for (const detail of tx.splitDetails) {
+                const userIdStr = detail.user._id.toString();
+                const share = detail.share;
 
-        // Skip if user is same as payer
-        if (userIdStr === payerId) continue;
+                // Skip if user is same as payer
+                if (userIdStr === payerId) continue;
 
-        // Payer receives money
-        balanceSheet[payerId] = (balanceSheet[payerId] || 0) + share;
+                // Payer receives money
+                balanceSheet[payerId] = (balanceSheet[payerId] || 0) + share;
 
-        // Split user owes money
-        balanceSheet[userIdStr] = (balanceSheet[userIdStr] || 0) - share;
-      }
-    }
+                // Split user owes money
+                balanceSheet[userIdStr] = (balanceSheet[userIdStr] || 0) - share;
+            }
+        }
 
-    // Create readable summary
-    const summary = grp.users.map((user) => {
-      const uid = user._id.toString();
-      return {
-        user: {
-          _id: user._id,
-          username: user.username,
-          email: user.email,
-          avatar: user.avatar
-        },
-        netBalance: (balanceSheet[uid] || 0).toFixed(2),
-        status:
-          balanceSheet[uid] > 0
-            ? "They are owed"
-            : balanceSheet[uid] < 0
-            ? "They owe"
-            : "Settled"
-      };
-    });
+        // Create readable summary
+        const summary = grp.users.map((user) => {
+            const uid = user._id.toString();
+            return {
+                user: {
+                    _id: user._id,
+                    username: user.username,
+                    email: user.email,
+                    avatar: user.avatar
+                },
+                netBalance: (balanceSheet[uid] || 0).toFixed(2),
+                status:
+                    balanceSheet[uid] > 0
+                        ? "They are owed"
+                        : balanceSheet[uid] < 0
+                            ? "They owe"
+                            : "Settled"
+            };
+        });
 
-    res.status(200).json({
-      success: true,
-      group: {
-        _id: grp._id,
-        name: grp.name
-      },
-      balances: summary
-    });
+        res.status(200).json({
+            success: true,
+            group: {
+                _id: grp._id,
+                name: grp.name
+            },
+            balances: summary
+        });
 
 
     } catch (error) {
@@ -252,4 +282,4 @@ const balanceSheetGrp = async (req, res) => {
         throw new ApiError(500, "unexpected error occured in generating balance sheet of the group")
     }
 }
-export { getAllGroups, joinGroup, createGroup, addUser, deleteGroup, removeUser, getAllUsers ,balanceSheetGrp};
+export { getAllGroups, joinGroup, createGroup, addUser, deleteGroup, removeUser, balanceSheetGrp , getGroupInfo};

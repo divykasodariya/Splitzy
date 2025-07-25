@@ -2,34 +2,56 @@ import { Group } from "../models/group.model.js";
 import { Transaction } from "../models/transaction.model.js";
 import { User } from "../models/user.model.js";
 import { ApiError } from "../utils/ApiError.js";
-
 const addExpense = async (req, res) => {
     const { groupid, description, amount, payer, splitDetails, currency } = req.body;
+    
     try {
-        const grp = await Group.findOne({ _id: groupid })
-        if (!grp.users.includes(payer)) throw new ApiError(300, "unauthorised you must be in the group", [])
+        // 1. Validate group and payer
+        const group = await Group.findById(groupid);
+        if (!group) throw new ApiError(404, "Group not found", []);
+        if (!group.users.includes(payer)) {
+            throw new ApiError(403, "Unauthorized - You must be in the group", []);
+        }
+
+        // 2. Create transaction
         const transaction = await Transaction.create({
-            group: grp,
+            group: groupid,
             description,
             amount,
             payer,
             splitDetails,
             currency
+        });
 
-        })
+        // 3. Add transaction to group
+        group.transactions.push(transaction._id);
+        await group.save();
+
+        // 4. Add transaction to all involved users (payer + split users)
+        const userIds = [
+            payer,
+            ...splitDetails.map(detail => detail.user)
+        ];
+
+        await User.updateMany(
+            { _id: { $in: userIds } },
+            { $addToSet: { transactions: transaction._id } }
+        );
+
         res.status(201).json({
             success: true,
             message: "Expense added successfully",
             transaction,
-        })
+        });
+
     } catch (error) {
-        if (error instanceof (ApiError)) {
-            throw error
+        if (error instanceof ApiError) {
+            throw error;
         }
-        console.log(error)
-        throw new ApiError(500, "unexpected error occured in settling up ", [])
+        console.error("Error adding expense:", error);
+        throw new ApiError(500, "Unexpected error occurred while adding expense", [error]);
     }
-}
+};
 const SettleUp = async (req, res) => {
     const { transid, amount } = req.body
     const userid = req._id;
