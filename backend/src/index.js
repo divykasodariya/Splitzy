@@ -15,7 +15,7 @@ app.use(cookieParser());
 app.use(cors({
     origin:['http://localhost:3000',
     'http://localhost:5173',
-    'http://192.168.29.173:5173',
+    
     ],
     credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
@@ -33,7 +33,7 @@ app.use('/api/v1/groups',GroupRouter)
 app.use('/api/v1/trsn',TransRouter)
 //server
 const port = process.env.PORT;
-app.listen(port||6969,'0.0.0.0',()=>{
+app.listen(port||6969,()=>{
     console.log(`server started at port ${port}`)
     connectDB().catch((err)=>{
         console.log("mongo db connection error !!",err);
