@@ -54,7 +54,10 @@ const AddExpense = () => {
         alert("Please select at least one user");
         return;
     }
-    if(expense.splitType==="custom" && expense.selectedUsers.length===0)
+    if(expense.splitType==="custom" && expense.selectedUsers.length===0){
+      alert("Please select users for custom split");
+      return;
+    }
     try {
         let splitDetails=[];
         for(let i=0;i<expense.selectedUsers.length;i++){
