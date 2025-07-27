@@ -15,8 +15,8 @@ app.use(cookieParser());
 app.use(cors({
     origin:['http://localhost:3000',
     'http://localhost:5173',
-    'https://splitzy-now.vercel.app/',
-    'https://splitzy-divykasodariyas-projects.vercel.app/'
+    'https://splitzy-now.vercel.app',
+    'https://splitzy-divykasodariyas-projects.vercel.app'
     ],
     credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
