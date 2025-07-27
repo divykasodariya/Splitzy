@@ -1,9 +1,10 @@
 import axios from "axios";
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { API_URL } from "../config";
 const Register = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -28,7 +29,15 @@ const Register = () => {
           withCredentials: true,
         }
       );
-      if (response) navigate("/dashboard");
+      if (response) {
+        // Check if user was redirected from invite page
+        const from = location.state?.from;
+        if (from) {
+          navigate(from);
+        } else {
+          navigate("/dashboard");
+        }
+      }
       
     } catch (error) {
       alert("Invalid email or password");
@@ -84,7 +93,10 @@ const Register = () => {
             </button>
             <a
               href="/login"
-           
+              onClick={(e) => {
+                e.preventDefault();
+                navigate("/login", { state: location.state });
+              }}
               className="text-sm text-[#6C4AB6]"
             >
               Login

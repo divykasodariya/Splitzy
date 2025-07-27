@@ -110,8 +110,9 @@ const getAllTransactionsUsr = async (req, res) => {
         const user = await User.findOne({ _id: req._id }).populate({
             path: "transactions",
             populate: [
-                { path: "payer", select: "name email" },
-                { path: "splitDetails.user", select: "name email" }
+                { path: "payer", select: "username " },
+                { path: "splitDetails.user", select: "username " },
+                {path:"group",select:"name"}
             ]
         })
 

@@ -234,5 +234,29 @@ const shortSummaryUsr = async (req, res) => {
     }
 };
 
+const getCurrentUser = async (req, res) => {
+    try {
+        const user = await User.findOne({ _id: req._id }).select('_id username email avatar');
+        
+        if (!user) throw new ApiError(404, "User not found", []);
 
-export { userLogin, userRegister, userLogout, balanceSummaryUsr ,shortSummaryUsr};
+        res.status(200).json({
+            success: true,
+            user: {
+                _id: user._id,
+                username: user.username,
+                email: user.email,
+                avatar: user.avatar
+            }
+        });
+
+    } catch (err) {
+        if (err instanceof ApiError) {
+            throw err;
+        }
+        console.log(err);
+        throw new ApiError(500, "Error fetching user profile", [err]);
+    }
+};
+
+export { userLogin, userRegister, userLogout, balanceSummaryUsr, shortSummaryUsr, getCurrentUser };

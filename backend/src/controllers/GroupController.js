@@ -144,35 +144,35 @@ const removeUser = async (req, res) => {
         throw new ApiError(500, "unexpected error occured in removing user ", [])
     }
 }
-// const getAllUsers = async (req, res) => {
-//     try {
-//         const { groupid } = req.body;
-//         const userid = req._id;
-//         const group = await Group.findOne({ _id: groupid }).populate({
-//             path: "users",
-//             select: "username email _id avatar"
-//         }).populate({
-//             path: "transactions",
-//             select: "amount payer description"
-//         })
-//         // console.log("this is group.users",group.users);
-//         const users = group.users.filter((u) => {
-//             // console.log("user : ",u._id)
-//             return u._id.toString() !== userid.toString()
-//         })
-//         res.status(200).json({
-//             success:true,
-//             data:users
-//         })
+const getAllUsers = async (req, res) => {
+    try {
+        const  groupid  = req.params.id;
+        const userid = req._id;
+        const group = await Group.findOne({ _id: groupid }).populate({
+            path: "users",
+            select: "username email _id avatar"
+        }).populate({
+            path: "transactions",
+            select: "amount payer description"
+        })
+        // console.log("this is group.users",group.users);
+        const users = group.users.filter((u) => {
+            // console.log("user : ",u._id)
+            return u._id.toString() !== userid.toString()
+        })
+        res.status(200).json({
+            success:true,
+            data:users
+        })
 
 
-//     } catch (error) {
-//         if (error instanceof (ApiError)) {
-//             throw error
-//         }
-//         throw new ApiError(500, "unexpected error occured in getting all users of the group")
-//     }
-// }
+    } catch (error) {
+        if (error instanceof (ApiError)) {
+            throw error
+        }
+        throw new ApiError(500, "unexpected error occured in getting all users of the group")
+    }
+}
 const getGroupInfo = async (req, res) => {
     const groupid = req.params.id;
     try {
@@ -282,4 +282,4 @@ const balanceSheetGrp = async (req, res) => {
         throw new ApiError(500, "unexpected error occured in generating balance sheet of the group")
     }
 }
-export { getAllGroups, joinGroup, createGroup, addUser, deleteGroup, removeUser, balanceSheetGrp , getGroupInfo};
+export { getAllGroups, joinGroup, createGroup, addUser, deleteGroup, getAllUsers,removeUser, balanceSheetGrp , getGroupInfo};

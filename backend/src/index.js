@@ -4,7 +4,7 @@ import express from "express"
 import dotenv from "dotenv"
 dotenv.config({})
 import connectDB from "./db/database.js";
-import { UserRouter } from "./routes/userRoutes.js"
+import{ UserRouter} from "./routes/userRoutes.js"
 import { GroupRouter } from "./routes/groupRoutes.js"
 import { TransRouter } from "./routes/transactionRoutes.js"
 

@@ -1,9 +1,10 @@
 import axios from "axios";
 import { useState } from "react";
 import { API_URL } from "../config";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 const Login = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const handleLogin = async () => {
@@ -23,7 +24,15 @@ const Login = () => {
           withCredentials: true,
         }
       );
-      if(response.status === 200) navigate("/dashboard");
+      if(response.status === 200) {
+        // Check if user was redirected from invite page
+        const from = location.state?.from;
+        if (from) {
+          navigate(from);
+        } else {
+          navigate("/dashboard");
+        }
+      }
       
     } catch (error) {
       alert("Invalid email or password");
@@ -66,7 +75,16 @@ const Login = () => {
             >
               Login
             </button>
-            <a href="/signup" onClick={()=>navigate("/signup")} className="text-sm text-[#6C4AB6]">Sign up</a>
+            <a 
+              href="/signup" 
+              onClick={(e) => {
+                e.preventDefault();
+                navigate("/signup", { state: location.state });
+              }} 
+              className="text-sm text-[#6C4AB6]"
+            >
+              Sign up
+            </a>
           </div>
         </div>
       </div>

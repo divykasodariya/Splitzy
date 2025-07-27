@@ -186,12 +186,12 @@ const Dashboard = () => {
           <span className="text-2xl">🤝</span>
           <span className="text-xs">Friends</span>
         </button>
-        <button className="flex flex-col items-center text-[#6C4AB6] font-bold hover:text-[#8D72E1] transition relative">
+        <button onClick={()=>navigate("/dashboard/activity")} className="flex flex-col items-center text-[#6C4AB6] font-bold hover:text-[#8D72E1] transition relative">
           <span className="text-2xl">📊</span>
           <span className="text-xs">Activity</span>
           <span className="absolute top-0 right-2 w-2 h-2 bg-[#F9F871] rounded-full animate-pulse"></span>
         </button>
-        <button className="flex flex-col items-center text-[#6C4AB6] font-bold hover:text-[#8D72E1] transition">
+        <button onClick={()=>navigate("/dashboard/profile")} className="flex flex-col items-center text-[#6C4AB6] font-bold hover:text-[#8D72E1] transition">
           <span className="text-2xl">👤</span>
           <span className="text-xs">Account</span>
         </button>
