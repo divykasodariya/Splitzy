@@ -216,6 +216,7 @@ const AddExpense = () => {
           {/* Buttons */}
           <div className="flex gap-4 mt-6">
             <button
+            onClick={handleSubmit}
               type="submit"
               className="flex-1 p-2 bg-[#6C4AB6] text-white rounded-lg font-semibold hover:bg-[#8D72E1] transition"
             >
