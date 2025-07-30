@@ -4,7 +4,7 @@ import { User } from "../models/user.model.js";
 import { ApiError } from "../utils/ApiError.js";
 const addExpense = async (req, res) => {
     const { groupid, description, amount, payer, splitDetails, currency } = req.body;
-    
+
     try {
         // 1. Validate group and payer
         const group = await Group.findById(groupid);
@@ -53,30 +53,68 @@ const addExpense = async (req, res) => {
     }
 };
 const SettleUp = async (req, res) => {
-    const { transid, amount } = req.body
+    const { transid, splitId } = req.body
     const userid = req._id;
 
-    if (!transid || !amount) throw new ApiError(404,
-        "invalid transaction or amount"
+    if (!transid || !splitId) throw new ApiError(404,
+        "invalid transaction or splitId"
     )
     try {
-        const transc = await Transaction.findOne({ _id: transid })
-        const user = await User.findOne({ _id: userid })
+
+        const transc = await Transaction.findOne({ _id: transid }).populate({
+            path: "payer",
+            select: "_id username"
+        }).populate({
+            path: "group", select: "groupAvatar name _id"
+        }).populate({
+            path: "splitDetails.user", select: "username _id"
+        })
+
+        // Use the authenticated user's ID, not splitId
+        const user = await User.findOne({ _id: userid }).populate({
+            path: "transactions.splitDetails.user", select: "username _id "
+        })
+
         if (!user) throw new ApiError(404, "no user found")
         if (!transc) throw new ApiError(404, "no transaction found")
-        transc.splitDetails.forEach((split) => {
-            if (split.user.toString() === userid) {
-                split.isPaid = true;
-                split.share -= amount;
-            }
-        });
+
+        // Find and update the specific split
+        const splitToUpdate = transc.splitDetails.find(split => split._id.toString() === splitId);
+        if (!splitToUpdate) {
+            throw new ApiError(404, "Split not found");
+        }
+
+        splitToUpdate.isPaid = true;
+
         await transc.save();
+
+        // Find the specific transaction in the user's transactions array
+        const userTransaction = user.transactions.find(t => t._id.toString() === transid);
+        if (userTransaction) {
+            userTransaction.splitDetails = transc.splitDetails;
+        }
+        await user.save();
+
+        const group = await Group.findOne({ _id: transc.group._id }).populate({
+            path: "transactions",
+            populate: {
+                path: "splitDetails.user",
+                select: "username _id"
+            }
+        })
+        const groupTransaction = group.transactions.find(trsn => trsn._id.toString() === transid);
+        if (groupTransaction) {
+            groupTransaction.splitDetails = transc.splitDetails;
+        }
+        await group.save();
+
         return res.status(200).json({ success: true, message: "successfully settled up" })
 
     } catch (error) {
         if (error instanceof (ApiError)) {
             throw error
         }
+        console.error("Error in SettleUp:", error);
         throw new ApiError(500, "unexpected error occured in settling up ", [])
     }
 }
@@ -110,14 +148,14 @@ const getAllTransactionsUsr = async (req, res) => {
         const user = await User.findOne({ _id: req._id }).populate({
             path: "transactions",
             populate: [
-                { path: "payer", select: "username " },
-                { path: "splitDetails.user", select: "username " },
-                {path:"group",select:"name"}
+                { path: "payer", select: "username avatar " },
+                { path: "splitDetails.user", select: "username avatar" },
+                { path: "group", select: "name groupAvatar" }
             ]
         })
 
         if (!user) throw new ApiError(404, "no user found", [])
-         const transctions = user.transactions;
+        const transctions = user.transactions;
         res.status(200).json(transctions);
     } catch (error) {
         if (error instanceof (ApiError)) {
@@ -127,5 +165,48 @@ const getAllTransactionsUsr = async (req, res) => {
         throw new ApiError(500, "unexpected error occured in getting all expenses ", [])
     }
 }
+const deleteExpense = async (req, res) => {
+    try {
+        const { id } = req.params; 
+        
+       
+        const transaction = await Transaction.findOne({ _id: id }).populate({ 
+            path: "group", 
+            select: "name _id" 
+        });
+        
+        if (!transaction) {
+            throw new ApiError(404, "Transaction not found");
+        }
+        
+        const group = await Group.findOne({ _id: transaction.group._id }).populate({ 
+            path: "users", 
+            select: "_id username" 
+        });
 
-export { addExpense, getAllTransactionsGrp, SettleUp ,getAllTransactionsUsr}
+        const isUserInGroup = group.users.some(user => user._id.toString() === req._id.toString());
+        if (!isUserInGroup) {
+            throw new ApiError(403, "You are not authorized to delete this transaction");
+        }
+        
+        await Transaction.deleteOne({ _id: id });
+        
+        group.transactions = group.transactions.filter(t => t.toString() !== id);
+        await group.save();
+        
+        await User.updateMany(
+            { transactions: id },
+            { $pull: { transactions: id } }
+        );
+        
+        return res.status(200).json({
+            success: true,
+            message: "Transaction successfully deleted"
+        });
+    } catch (error) {
+        console.error("Error deleting expense:", error);
+        if (error instanceof ApiError) throw error;
+        throw new ApiError(500, "Unexpected error in deleting expense", [error]);
+    }
+}
+export { addExpense, getAllTransactionsGrp, SettleUp, getAllTransactionsUsr , deleteExpense }

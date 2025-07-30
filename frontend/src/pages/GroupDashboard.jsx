@@ -99,8 +99,9 @@ const GroupDashboard = () => {
         <div className="text-[#2D2D2D] text-sm px-5 ">No transactions yet.</div>
       )}
       {group.transactions.length > 0 && (
-        <div className="px-6 py-4 bg-[#E9E9FE]/80 rounded-2xl shadow-lg mx-4 mt-2  bg-clip-padding backdrop-filter backdrop-blur-sm bg-opacity-10 border border-gray-100">
+        <div className="flex flex-col-reverse gap-4 px-6 py-4 bg-[#E9E9FE]/80 rounded-2xl shadow-lg mx-4 mt-2  bg-clip-padding backdrop-filter backdrop-blur-sm bg-opacity-10 border border-gray-100">
           {group.transactions.map((txn) => (
+            <div onClick={()=>navigate(`/dashboard/transaction/${txn._id}`)}>
             <div
               key={txn._id}
               className="mb-4 pb-4 border-b border-[#D9D9FE] last:border-b-0 last:pb-0 last:mb-0"
@@ -166,6 +167,7 @@ const GroupDashboard = () => {
                 </div>
               </div>
             </div>
+            </div>
           ))}
         </div>
       )}
@@ -198,11 +200,11 @@ const GroupDashboard = () => {
           <span className="text-2xl">👥</span>
           <span className="text-xs">Groups</span>
         </button>
-        <button className="flex flex-col items-center text-[#6C4AB6] font-bold hover:text-[#8D72E1] transition">
+        <button  className="flex flex-col items-center text-[#6C4AB6] font-bold hover:text-[#8D72E1] transition">
           <span className="text-2xl">🤝</span>
           <span className="text-xs">Friends</span>
         </button>
-        <button className="flex flex-col items-center text-[#6C4AB6] font-bold hover:text-[#8D72E1] transition relative">
+        <button onClick={()=>navigate("/dashboard/activity")} className="flex flex-col items-center text-[#6C4AB6] font-bold hover:text-[#8D72E1] transition relative">
           <span className="text-2xl">📊</span>
           <span className="text-xs">Activity</span>
           <span className="absolute top-0 right-2 w-2 h-2 bg-[#F9F871] rounded-full animate-pulse"></span>

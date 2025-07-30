@@ -10,6 +10,7 @@ import AddExpense from './pages/AddExpense.jsx'
 import InviteToGroup from './pages/redirection_pages/inviteToGroup.jsx'
 import UserActivity from './pages/UserActivity.jsx'
 import Profile from './pages/Users/Profile.jsx'
+import TransactionDashboard from './pages/TransactionDashboard.jsx'
 function App() {
 
   return (
@@ -26,6 +27,7 @@ function App() {
         <Route path="/group/invite/:id" element={<InviteToGroup />} />
         <Route path="/dashboard/activity" element={<UserActivity />} />
         <Route path="/dashboard/profile" element={<Profile />} />
+        <Route path="/dashboard/transaction/:id" element={<TransactionDashboard />} />
       </Routes>
     </BrowserRouter>
       
