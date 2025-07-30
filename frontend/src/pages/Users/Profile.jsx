@@ -43,13 +43,30 @@ const Profile = () => {
         }
     };
 
-    const handleDeleteAccount = () => {
+    const handleDeleteAccount = async() => {
         const confirmed = window.confirm(
             "Are you sure you want to delete your account? This action cannot be undone and will permanently delete all your data."
         );
         if (confirmed) {
-            // TODO: Implement delete account functionality
-            alert("Delete account functionality coming soon!");
+          try {
+            const response = await axios.delete(`${API_URL}/users/delete`,{
+            withCredentials:true
+          })
+
+          if(response.data.success){
+            navigate("/login")
+            return(<div>
+                <h1 className="font-bold-400 text-black">
+                    successfully deleted account
+                </h1>
+            </div>)
+          } 
+          } catch (error) {
+            console.error("deletion failed:", error);
+            // Still navigate to login even if logout fails
+            navigate("/login");
+          }
+           
         }
     };
 

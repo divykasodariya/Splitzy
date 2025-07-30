@@ -2,6 +2,8 @@ import jwt from "jsonwebtoken"
 import bcrypt from "bcrypt"
 import { ApiError } from '../utils/ApiError.js'
 import { User } from "../models/user.model.js";
+import { Group } from "../models/group.model.js";
+import { Transaction } from "../models/transaction.model.js";
 const userLogin = async (req, res) => {
     const { email, password } = req.body;
     if (!(email && password)) {
@@ -259,4 +261,25 @@ const getCurrentUser = async (req, res) => {
     }
 };
 
-export { userLogin, userRegister, userLogout, balanceSummaryUsr, shortSummaryUsr, getCurrentUser };
+const deleteAccount=async(req,res)=>{
+    try {
+        const id=req._id;
+        const user = await User.findOne({_id:id})
+        if(!user) throw new ApiError(404,"no user found ", []);
+        //remove user from every group
+        await Group.updateMany({users:id},{$pull:{users:id}})
+        // await Transaction.updateMany({payer:id},{$unset:""});
+       await Transaction.deleteMany({payer:id});
+        await Transaction.updateMany({"splitDetails.user":id},{$pull:{splitDetails:{user:id}}})
+        await User.deleteOne({_id:id});    
+        res.status(200).json({
+            success:true,
+            message:"successfully deleted account"
+        })
+
+    } catch (error) {
+        if(error instanceof(ApiError)) throw error;
+        throw new ApiError(500,"internal server error in deleting account",[error])
+    }
+}
+export { userLogin, userRegister, userLogout, balanceSummaryUsr, shortSummaryUsr, getCurrentUser,deleteAccount };
